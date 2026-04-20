@@ -1,11 +1,24 @@
-// Рабочий код со стрелочными функциями
+// Рабочий код с LocalStorage
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Скрипт загружен!');
     
     // Массив для избранного
     let favorites = [];
     
-    // СОЗДАЕМ БЛОК ИЗБРАННОГО (обычная функция - оставим, т.к. это объявление)
+    // ===== ЗАГРУЗКА ИЗ LOCALSTORAGE ПРИ СТАРТЕ =====
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+        favorites = JSON.parse(savedFavorites);
+        console.log('Загружено избранное:', favorites);
+    }
+    
+    // ===== ФУНКЦИЯ СОХРАНЕНИЯ В LOCALSTORAGE =====
+    function saveFavoritesToLocalStorage() {
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+        console.log('Сохранено в localStorage:', favorites);
+    }
+    
+    // СОЗДАЕМ БЛОК ИЗБРАННОГО
     function createFavoritesBlock() {
         const main = document.querySelector('main');
         if (!main) return;
@@ -25,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         main.appendChild(block);
         
-        // Кнопки блока со стрелочными функциями
+        // Кнопки блока
         document.getElementById('compare-btn').onclick = () => {
             if (favorites.length === 0) {
                 alert('Нет авто для сравнения');
@@ -59,11 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             favorites = [];
             updateList();
+            saveFavoritesToLocalStorage();
             alert('Список очищен');
         };
     }
     
-    // ОБНОВЛЕНИЕ СПИСКА
+    // ОБНОВЛЕНИЕ СПИСКА ИЗБРАННОГО
     function updateList() {
         const listDiv = document.getElementById('favorites-list');
         const countSpan = document.getElementById('favorites-count');
@@ -73,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (favorites.length === 0) {
             listDiv.innerHTML = 'Список пуст';
-            return;
+            saveFavoritesToLocalStorage();
         }
         
         let html = '<ul>';
@@ -86,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         html += '</ul>';
         listDiv.innerHTML = html;
         
-        // Кнопки удаления со стрелочными функциями
+        // Кнопки удаления
         const removeButtons = document.querySelectorAll('.remove-fav');
         removeButtons.forEach(btn => {         
             btn.onclick = (e) => {              
@@ -101,14 +115,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 updateList();
+                saveFavoritesToLocalStorage();
             };
         });
+        
+        saveFavoritesToLocalStorage();
     }
     
     // ДОБАВЛЕНИЕ В ИЗБРАННОЕ
     function setupFavButtons() {
         const buttons = document.querySelectorAll('.add-to-favorites');
         console.log('Найдено кнопок: ' + buttons.length);
+        
+        // Восстанавливаем состояние кнопок после загрузки страницы
+        favorites.forEach(savedCar => {
+            const btn = document.querySelector('.add-to-favorites[data-id="' + savedCar.id + '"]');
+            if (btn) {
+                btn.textContent = '★ В избранном';
+                btn.disabled = true;
+            }
+        });
         
         buttons.forEach(btn => {                
             btn.onclick = (e) => {               
@@ -126,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const year = product.getAttribute('data-year');
                 const imgSrc = product.querySelector('img').src;
                 
-                // Проверяем, есть ли уже (через some со стрелочной функцией)
+                // Проверяем, есть ли уже
                 const exists = favorites.some(car => car.id === id);
                 
                 if (exists) {
@@ -147,11 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.target.disabled = true;
                 
                 updateList();
+                saveFavoritesToLocalStorage();
             };
         });
     }
     
-    // ФИЛЬТР со стрелочной функцией
+    // ФИЛЬТР
     function setupFilter() {
         const filter = document.getElementById('categoryFilter');
         if (!filter) return;
@@ -172,7 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
     
+    // ЗАПУСК ВСЕХ ФУНКЦИЙ
     createFavoritesBlock();
     setupFavButtons();
     setupFilter();
+    
+    // Обновляем отображение списка при загрузке (если есть сохранённые авто)
+    if (favorites.length > 0) {
+        updateList();
+    }
 });
